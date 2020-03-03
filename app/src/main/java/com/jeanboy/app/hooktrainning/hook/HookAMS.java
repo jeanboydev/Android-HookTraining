@@ -73,16 +73,17 @@ public class HookAMS {
 
     public static void hookActivityThread() {
         try {
+            // 获取到 mH 对象
             @SuppressLint("PrivateApi")
             Class<?> atClass = Class.forName("android.app.ActivityThread");
             Field mHField = atClass.getDeclaredField("mH");
             mHField.setAccessible(true);
-
+            // 获取到 ActivityThread 对象
             @SuppressLint("DiscouragedPrivateApi")
             Method currentActivityThreadMethod = atClass.getDeclaredMethod("currentActivityThread");
             Object currentActivityThread = currentActivityThreadMethod.invoke(null);
             Object mH = mHField.get(currentActivityThread);
-
+            // 拿到 mCallback 替换成我们自己的
             Field mCallbackField = Handler.class.getDeclaredField("mCallback");
             mCallbackField.setAccessible(true);
             mCallbackField.set(mH, new MyCallback());
@@ -113,12 +114,15 @@ public class HookAMS {
                 }
                 Field mIntentField = laiClass.getDeclaredField("mIntent");
                 mIntentField.setAccessible(true);
+                // 获取代理的 Intent
                 Intent proxyIntent = (Intent) mIntentField.get(mLaunchActivityItem);
                 if (proxyIntent == null) {
                     return false;
                 }
+                // 获取到前面传入的 targetIntent
                 Intent targetIntent = proxyIntent.getParcelableExtra("targetIntent");
                 if (targetIntent != null) {
+                    // 替换 Intent
                     mIntentField.set(mLaunchActivityItem, targetIntent);
                 }
             } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
